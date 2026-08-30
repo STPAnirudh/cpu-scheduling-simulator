@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CPU Scheduling Simulator</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#667085;--line:#d9dee8;--accent:#2563eb;--accent2:#1d4ed8;--good:#15803d;--danger:#dc2626;--shadow:0 8px 24px rgba(15,23,42,.07)}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{background:#102a43;color:#fff;padding:24px 28px} header h1{margin:0 0 5px;font-size:26px} header p{margin:0;color:#cbd5e1}
+main{max-width:1250px;margin:22px auto;padding:0 18px;display:grid;gap:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:18px}
+h2{font-size:18px;margin:0 0 14px}.sub{color:var(--muted);font-size:13px}
+.controls{display:grid;grid-template-columns:1.1fr .8fr .8fr auto auto;gap:10px;align-items:end}
+label{display:block;font-weight:650;margin-bottom:5px} input,select,button{font:inherit}
+input,select{width:100%;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff}
+button{border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer;background:var(--accent);color:white}
+button:hover{background:var(--accent2)} button.secondary{background:#e8edf5;color:#26364a} button.danger{background:#fee2e2;color:#991b1b}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+table{width:100%;border-collapse:collapse} th,td{padding:9px 8px;border-bottom:1px solid #e8ecf2;text-align:center} th{background:#f7f9fc;font-size:13px} td:first-child,th:first-child{text-align:left}
+.empty{text-align:center;color:var(--muted);padding:25px}
+.gantt-wrap{overflow-x:auto;padding-bottom:5px}.gantt{display:flex;min-width:max-content;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.block{height:64px;min-width:60px;padding:8px 10px;display:flex;flex-direction:column;justify-content:center;align-items:center;border-right:1px solid rgba(255,255,255,.75);font-weight:750}
+.block span{font-size:11px;font-weight:500;margin-top:2px}.idle{background:#e5e7eb;color:#374151}
+.scale{display:flex;min-width:max-content}.tick{width:60px;font-size:11px;color:var(--muted);padding-top:4px;text-align:left}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{background:#f7f9fc;border:1px solid var(--line);border-radius:10px;padding:13px}.metric b{display:block;font-size:21px}.metric span{color:var(--muted);font-size:12px}
+.grid2{display:grid;grid-template-columns:1.35fr .65fr;gap:18px}
+.log{background:#0f172a;color:#dbeafe;border-radius:10px;padding:13px;min-height:180px;max-height:360px;overflow:auto;font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap}
+.info{background:#eff6ff;border-left:4px solid var(--accent);padding:12px;border-radius:7px;color:#1e3a5f}
+.badge{display:inline-block;padding:3px 7px;border-radius:99px;background:#dbeafe;color:#1d4ed8;font-size:11px;font-weight:700}
+@media(max-width:850px){.controls{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header><h1>CPU Scheduling Simulator</h1><p>Interactive OPERATING SYSTEMS / CPU SCHEDULING visualizer — pure HTML, CSS and JavaScript.</p></header>
+<main>
+<section class="card">
+<h2>1. Process Input</h2>
+<div class="controls">
+  <div><label for="pid">Process ID</label><input id="pid" value="P1" placeholder="P1"></div>
+  <div><label for="at">AT</label><input id="at" type="number" min="0" value="0"></div>
+  <div><label for="bt">BT</label><input id="bt" type="number" min="1" value="5"></div>
+  <button id="addBtn">Insert Process</button>
+  <button class="secondary" id="sampleBtn">Load Sample</button>
+</div>
+<p class="sub">AT = Arrival Time, BT = Burst Time. Processes are inserted into the table below.</p>
+<div class="actions" style="margin-top:12px">
+  <button class="danger" id="clearBtn">Clear All</button>
+</div>
+<div id="processTable" style="margin-top:14px"></div>
+</section>
+
+<section class="card">
+<h2>2. Scheduling Algorithm</h2>
+<div class="controls" style="grid-template-columns:1fr 1fr auto auto">
+  <div><label for="algo">Algorithm</label>
+    <select id="algo">
+      <option value="FCFS">FCFS — First Come First Serve</option>
+      <option value="SJF">SJF — Shortest Job First (Non-preemptive)</option>
+      <option value="RR">Round Robin</option>
+      <option value="MLFQ">Multi-Level Feedback Queue</option>
+    </select>
+  </div>
+  <div><label for="quantum">Time Quantum</label><input id="quantum" type="number" min="1" value="2"></div>
+  <button id="runBtn">Run Simulation</button>
+  <button class="secondary" id="explainBtn">Explain Algorithm</button>
+  <button class="danger" id="exitBtn">Exit</button>
+</div>
+<div id="explanation" class="info" style="margin-top:12px"></div>
+</section>
+
+<section class="card">
+<h2>3. Gantt Chart <span id="algoBadge" class="badge">Not run</span></h2>
+<div id="ganttArea" class="gantt-wrap"><div class="empty">Run an algorithm to display the execution timeline.</div></div>
+</section>
+
+<section class="card">
+<h2>4. Process Results</h2>
+<div id="resultTable"><div class="empty">No simulation results yet.</div></div>
+</section>
+
+<section class="card">
+<h2>5. Summary</h2>
+<div class="metrics">
+ <div class="metric"><b id="avgWT">—</b><span>Average WT</span></div>
+ <div class="metric"><b id="avgTAT">—</b><span>Average TAT</span></div>
+ <div class="metric"><b id="throughput">—</b><span>Throughput (processes / time)</span></div>
+ <div class="metric"><b id="makespan">—</b><span>Total CPU Timeline</span></div>
+</div>
+</section>
+
+<section class="grid2">
+<section class="card"><h2>Operation Log</h2><div id="log" class="log">Ready. Insert processes and run a scheduling algorithm.</div></section>
+<section class="card"><h2>How it works</h2><div id="details" class="info">
+<b>Key formulas</b><br>
+TAT = CT − AT<br>
+WT = TAT − BT<br><br>
+The simulator also records CPU idle periods when no process has arrived.
+</div></section>
+</section>
+</main>
+
+<script>
+"use strict";
+let processes = [];
+let lastResult = null;
+
+const $ = id => document.getElementById(id);
+const algoText = {
+ FCFS:"FCFS executes ready processes in order of arrival. It is non-preemptive, so once a process starts it runs until completion.",
+ SJF:"SJF selects the shortest burst among processes that have already arrived. It is non-preemptive.",
+ RR:"Round Robin gives each ready process a fixed time quantum. When a time slice ends, newly arrived processes are added to the ready queue first; the unfinished current process is then placed at the back of the queue.",
+ MLFQ:"This implementation uses three feedback queues: Q0 (quantum 2), Q1 (quantum 4), and Q2 (FCFS). New processes enter Q0; unfinished processes are demoted after using their quantum. The highest non-empty queue is selected first. This assignment does not specify one exact MLFQ policy, so these rules are explicitly used by this simulator."
+};
+$("explanation").innerHTML = algoText.FCFS;
+
+$("algo").addEventListener("change", () => $("explanation").textContent = algoText[$("algo").value]);
+$("explainBtn").addEventListener("click", () => {
+  const a = $("algo").value;
+  $("explanation").innerHTML = "<b>"+a+"</b><br>"+algoText[a]+
+    (a==="RR" ? "<br><br>Current quantum: <b>"+$("quantum").value+"</b> time units." : "");
+});
+
+function log(msg){ $("log").textContent += "\\n" + msg; $("log").scrollTop = $("log").scrollHeight; }
+
+function renderProcesses(){
+ if(!processes.length){$("processTable").innerHTML='<div class="empty">No processes inserted.</div>';return;}
+ $("processTable").innerHTML = `<table><thead><tr><th>PID</th><th>AT</th><th>BT</th><th>Action</th></tr></thead><tbody>`+
+ processes.map((p,i)=>`<tr><td>${p.id}</td><td>${p.at}</td><td>${p.bt}</td><td><button class="danger" onclick="removeProcess(${i})">Delete</button></td></tr>`).join("")+
+ `</tbody></table>`;
+}
+window.removeProcess = function(i){log("Deleted "+processes[i].id+".");processes.splice(i,1);renderProcesses();};
+
+$("addBtn").addEventListener("click",()=>{
+ const id=$("pid").value.trim() || "P"+(processes.length+1);
+ const at=Number($("at").value), bt=Number($("bt").value);
+ if(!Number.isInteger(at)||at<0||!Number.isInteger(bt)||bt<=0){alert("Arrival time must be >= 0 and burst time must be > 0.");return;}
+ if(processes.some(p=>p.id===id)){alert("Process ID must be unique.");return;}
+ processes.push({id,at,bt});
+ log(`Inserted ${id}: AT=${at}, BT=${bt}`);
+ $("pid").value="P"+(processes.length+1); $("at").value=Math.max(0,at); $("bt").value=5;
+ renderProcesses();
+});
+$("clearBtn").addEventListener("click",()=>{processes=[];lastResult=null;renderProcesses();clearOutput();$("log").textContent="All processes cleared.";});
+$("sampleBtn").addEventListener("click",()=>{
+ processes=[{id:"P1",at:0,bt:5},{id:"P2",at:1,bt:3},{id:"P3",at:2,bt:8},{id:"P4",at:4,bt:2}];
+ $("pid").value="P5"; $("at").value=5; $("bt").value=4; renderProcesses(); log("Loaded sample: P1(0,5), P2(1,3), P3(2,8), P4(4,2).");
+});
+
+function clone(){return processes.map(p=>({...p,remaining:p.bt,ct:null,wt:null,tat:null}));}
+function addSeg(g,pid,start,end){if(end<=start)return;if(g.length&&g[g.length-1].pid===pid&&g[g.length-1].end===start)g[g.length-1].end=end;else g.push({pid,start,end});}
+
+function fcfs(){
+ let ps=clone().sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)),t=0,g=[];
+ for(const p of ps){if(t<p.at){addSeg(g,"IDLE",t,p.at);t=p.at;}let s=t;t+=p.bt;p.ct=t;addSeg(g,p.id,s,t);log(`FCFS: ${p.id} runs from ${s} to ${t}.`);}
+ return {ps,g};
+}
+function sjf(){
+ let ps=clone(),done=0,t=0,g=[];
+ while(done<ps.length){
+   const ready=ps.filter(p=>p.ct===null&&p.at<=t).sort((a,b)=>a.bt-b.bt||a.at-b.at||a.id.localeCompare(b.id));
+   if(!ready.length){const n=Math.min(...ps.filter(p=>p.ct===null).map(p=>p.at));addSeg(g,"IDLE",t,n);t=n;continue;}
+   const p=ready[0],s=t;t+=p.bt;p.ct=t;done++;addSeg(g,p.id,s,t);log(`SJF: selected shortest ready job ${p.id} (${p.bt} units), ${s}→${t}.`);
+ }
+ return {ps,g};
+}
+function rr(){
+ const ps=clone(),q=Number($("quantum").value); if(!Number.isInteger(q)||q<1) throw Error("Time quantum must be a positive integer.");
+ let t=0,g=[],queue=[],added=new Set(),finished=0;
+ const enqueue=()=>ps.filter(p=>p.at<=t&&!added.has(p.id)).sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).forEach(p=>{queue.push(p);added.add(p.id);});
+ while(finished<ps.length){
+   enqueue();
+   if(!queue.length){const n=Math.min(...ps.filter(p=>p.remaining>0&&!added.has(p.id)).map(p=>p.at));addSeg(g,"IDLE",t,n);t=n;enqueue();}
+   const p=queue.shift(),s=t,run=Math.min(q,p.remaining);t+=run;p.remaining-=run;addSeg(g,p.id,s,t);
+   log(`RR: ${p.id} gets CPU for ${run} unit(s), ${s}→${t}.`);
+   enqueue();
+   if(p.remaining>0)queue.push(p);else{p.ct=t;finished++;log(`RR: ${p.id} completed at ${t}.`);}
+ }
+ return {ps,g};
+}
+function mlfq(){
+ const ps=clone(), qs=[[],[],[]],added=new Set(),qv=[2,4,Infinity];let t=0,finished=0,g=[];
+ const enqueue=()=>ps.filter(p=>p.at<=t&&!added.has(p.id)).sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).forEach(p=>{p.level=0;qs[0].push(p);added.add(p.id);});
+ while(finished<ps.length){
+   enqueue();
+   let level=qs.findIndex(q=>q.length);
+   if(level<0){const n=Math.min(...ps.filter(p=>p.remaining>0&&!added.has(p.id)).map(p=>p.at));addSeg(g,"IDLE",t,n);t=n;enqueue();level=qs.findIndex(q=>q.length);}
+   const p=qs[level].shift(),run=Math.min(qv[level],p.remaining),s=t;t+=run;p.remaining-=run;addSeg(g,p.id,s,t);
+   log(`MLFQ: ${p.id} executes in Q${level} for ${run} unit(s), ${s}→${t}.`);
+   enqueue();
+   if(p.remaining>0){p.level=Math.min(2,level+1);qs[p.level].push(p);log(`MLFQ: ${p.id} demoted to Q${p.level}.`);}
+   else{p.ct=t;finished++;log(`MLFQ: ${p.id} completed at ${t}.`);}
+ }
+ return {ps,g};
+}
+function calculate(res){
+ res.ps.forEach(p=>{p.tat=p.ct-p.at;p.wt=p.tat-p.bt;});
+ const avgWT=res.ps.reduce((s,p)=>s+p.wt,0)/res.ps.length, avgTAT=res.ps.reduce((s,p)=>s+p.tat,0)/res.ps.length;
+ return {...res,avgWT,avgTAT,makespan:res.g.length?res.g[res.g.length-1].end:0};
+}
+function run(){
+ if(!processes.length){alert("Insert at least one process.");return;}
+ $("log").textContent=`Starting ${$("algo").value} simulation...`;
+ let r;
+ try{r=$("algo").value==="FCFS"?fcfs():$("algo").value==="SJF"?sjf():$("algo").value==="RR"?rr():mlfq();}
+ catch(e){alert(e.message);return;}
+ lastResult=calculate(r);renderGantt(lastResult.g);renderResults(lastResult.ps);
+ $("avgWT").textContent=lastResult.avgWT.toFixed(2);
+ $("avgTAT").textContent=lastResult.avgTAT.toFixed(2);
+ $("makespan").textContent=lastResult.makespan.toFixed(2);
+ $("throughput").textContent=(lastResult.ps.length/lastResult.makespan).toFixed(3);
+ $("algoBadge").textContent=$("algo").value;
+ $("details").innerHTML=`<b>Simulation complete.</b><br>Processes: ${lastResult.ps.length}<br>CPU timeline: 0 → ${lastResult.makespan}<br><br><b>Formulas</b><br>TAT = CT − AT<br>WT = TAT − BT`;
+}
+$("runBtn").addEventListener("click",run);
+
+function renderResults(ps){
+ ps=ps.slice().sort((a,b)=>a.id.localeCompare(b.id));
+ $("resultTable").innerHTML=`<table><thead><tr><th>PID</th><th>AT</th><th>BT</th><th>CT</th><th>TAT</th><th>WT</th></tr></thead><tbody>`+
+ ps.map(p=>`<tr><td>${p.id}</td><td>${p.at}</td><td>${p.bt}</td><td>${p.ct}</td><td>${p.tat}</td><td>${p.wt}</td></tr>`).join("")+
+ `</tbody></table>`;
+}
+function renderGantt(g){
+ if(!g.length){$("ganttArea").innerHTML='<div class="empty">No timeline.</div>';return;}
+ const total=g[g.length-1].end;
+ $("ganttArea").innerHTML='<div class="gantt">'+g.map(x=>{
+   const w=Math.max(60,(x.end-x.start)*55);
+   return `<div class="block ${x.pid==="IDLE"?"idle":""}" style="width:${w}px"><b>${x.pid}</b><span>${x.start} → ${x.end}</span></div>`;
+ }).join("")+'</div><div class="scale">'+g.map(x=>`<div class="tick" style="width:${Math.max(60,(x.end-x.start)*55)}px">${x.start}</div>`).join("")+`<div class="tick">${total}</div></div>`;
+}
+function clearOutput(){
+ $("ganttArea").innerHTML='<div class="empty">Run an algorithm to display the execution timeline.</div>';
+ $("resultTable").innerHTML='<div class="empty">No simulation results yet.</div>';
+ ["avgWT","avgTAT","throughput","makespan"].forEach(id=>$(id).textContent="—");
+ $("algoBadge").textContent="Not run";
+}
+$("exitBtn").addEventListener("click",()=>{
+  $("log").textContent="Simulation ended. You can still restart it by clicking Run Simulation.";
+  $("algoBadge").textContent="Exited";
+});
+renderProcesses(); $("explanation").textContent=algoText.FCFS;
+</script>
+</body>
+</html>
