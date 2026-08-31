@@ -72,7 +72,7 @@
     <div class="memory-controls">
       <div class="field"><label for="memorySize">Total Memory</label><input id="memorySize" type="number" min="32" max="100000" value="1024"></div>
       <div class="field"><label for="memAlgo">Allocation Algorithm</label><select id="memAlgo"><option value="first">First Fit</option><option value="best">Best Fit</option><option value="worst">Worst Fit</option><option value="next">Next Fit</option></select></div>
-      <div class="field"><label for="memPid">Process ID</label><input id="memPid" value="P1" placeholder="P1"></div>
+      <div class="field"><label for="memPid">Process ID</label><input id="memPid" value="P1" readonly aria-readonly="true"></div>
       <div class="field"><label for="memSizeInput">Process Size (KB)</label><input id="memSizeInput" type="number" min="1" max="100000" value="120" placeholder="120"></div>
       <button type="button" class="btn btn-primary" id="allocateBtn">Allocate</button>
     </div>
@@ -107,6 +107,7 @@ let processes=[];
 let memorySize=1024;
 let memoryBlocks=[];
 let nextFitAddress=0;
+let nextMemoryPID=1;
 
 const cpuDescriptions={
  FCFS:"<strong>FCFS</strong> runs processes in arrival order. It is non-preemptive: once a process starts, it runs until completion.",
@@ -150,11 +151,12 @@ function renderResults(ps){ps=ps.slice().sort((a,b)=>a.id.localeCompare(b.id));$
 function renderGantt(g){if(!g.length){$("ganttArea").innerHTML='<div class="empty">No timeline.</div>';return}const max=Math.max(...g.map(x=>x.end-x.start));$("ganttArea").innerHTML='<div class="gantt">'+g.map(x=>{const width=Math.max(74,Math.min(240,(x.end-x.start)/Math.max(1,max)*240));return'<div class="gblock '+(x.pid==='IDLE'?'idle':'')+'" style="width:'+width+'px"><span>'+escapeHTML(x.pid)+'</span><small>'+x.start+' → '+x.end+'</small></div>'}).join('')+'</div>'}
 function clearCPUOutput(){$("ganttArea").innerHTML='<div class="empty">Run a simulation to display the CPU timeline.</div>';$('resultTable').innerHTML='<div class="empty">No simulation results yet.</div>';['avgWT','avgTAT','throughput','makespan'].forEach(id=>$(id).textContent='—');$('algoBadge').textContent='Not run';}
 
-function initMemory(){memorySize=Math.max(32,Math.min(100000,Number($("memorySize").value)||1024));$("memorySize").value=memorySize;memoryBlocks=[{type:'free',start:0,size:memorySize}];nextFitAddress=0;$("memPid").value='P1';$("memSizeInput").value=120;renderMemory();$("memoryLog").textContent='Memory initialized with '+memorySize+' KB free space.';showToast('Memory reset')}
-function chooseBlock(size,algo){const candidates=memoryBlocks.map((b,i)=>({b,i})).filter(x=>x.b.type==='free'&&x.b.size>=size);if(!candidates.length)return-1;if(algo==='first')return candidates[0].i;if(algo==='best')return candidates.reduce((a,x)=>x.b.size<a.b.size?x:a).i;if(algo==='worst')return candidates.reduce((a,x)=>x.b.size>a.b.size?x:a).i;if(algo==='next'){const ordered=candidates.slice().sort((a,b)=>a.b.start-b.b.start);const after=ordered.filter(x=>x.b.start>=nextFitAddress);return (after[0]||ordered[0]).i}return candidates[0].i}
+function initMemory(){memorySize=Math.max(32,Math.min(100000,Number($("memorySize").value)||1024));$("memorySize").value=memorySize;memoryBlocks=[{type:'free',start:0,size:memorySize}];nextFitAddress=0;nextMemoryPID=1;$("memPid").value='P1';$("memSizeInput").value=120;renderMemory();$("memoryLog").textContent='Memory initialized with '+memorySize+' KB free space.';showToast('Memory reset')}
+function chooseBlock(size,algo){const candidates=memoryBlocks.map((b,i)=>({b,i})).filter(x=>x.b.type==='free'&&x.b.size>=size);if(!candidates.length)return-1;if(algo==='first')return candidates[0].i;if(algo==='best')return candidates.reduce((a,x)=>x.b.size<a.b.size?x:a).i;if(algo==='worst')return candidates.reduce((a,x)=>x.b.size>a.b.size?x:a).i;if(algo==='next'){const ordered=candidates.slice().sort((a,b)=>a.b.start-b.b.start);const containing=ordered.find(x=>nextFitAddress>=x.b.start&&nextFitAddress<x.b.start+x.b.size);if(containing)return containing.i;const after=ordered.find(x=>x.b.start>=nextFitAddress);return (after||ordered[0]).i}return candidates[0].i}
 function mergeFree(){const merged=[];for(const b of memoryBlocks){const last=merged[merged.length-1];if(last&&last.type==='free'&&b.type==='free')last.size+=b.size;else merged.push({...b})}memoryBlocks=merged}
 function allocateMemory(){
- const id=$("memPid").value.trim();const size=Number($("memSizeInput").value);
+ const id='P'+nextMemoryPID;const size=Number($("memSizeInput").value);
+  $("memPid").value=id;
  if(!/^[A-Za-z][A-Za-z0-9_-]*$/.test(id)){showToast('Process ID must start with a letter');return}
  if(!Number.isInteger(size)||size<=0||size>100000){showToast('Enter a valid process size');return}
  if(size>memorySize){showToast('Process is larger than total memory');return}
@@ -163,10 +165,9 @@ function allocateMemory(){
  const block=memoryBlocks[idx],start=block.start;const alloc={type:'process',id,size,start};const remain=block.size-size;memoryBlocks.splice(idx,1,alloc,...(remain>0?[{type:'free',start:start+size,size:remain}]:[]));
  nextFitAddress=(start+size)%memorySize;
  const names={first:'First Fit',best:'Best Fit',worst:'Worst Fit',next:'Next Fit'};mlog(names[algo]+': '+id+' allocated '+size+' KB at '+start+' KB.');renderMemory();
- const nextNumber=getNextMemoryPIDNumber();$("memPid").value='P'+nextNumber;showToast(id+' allocated')
+ nextMemoryPID++;$("memPid").value='P'+nextMemoryPID;showToast(id+' allocated')
 }
-function getNextMemoryPIDNumber(){let n=1;const ids=new Set(memoryBlocks.filter(b=>b.type==='process').map(b=>b.id));while(ids.has('P'+n))n++;return n}
-function freeProcess(id){const idx=memoryBlocks.findIndex(b=>b.type==='process'&&b.id===id);if(idx<0)return;memoryBlocks[idx]={type:'free',start:memoryBlocks[idx].start,size:memoryBlocks[idx].size};mergeFree();mlog(id+' released its memory. Adjacent free blocks were merged.');renderMemory();$("memPid").value=getNextMemoryPIDNumber()===1?'P1':'P'+getNextMemoryPIDNumber();showToast(id+' released')}
+function freeProcess(id){const idx=memoryBlocks.findIndex(b=>b.type==='process'&&b.id===id);if(idx<0)return;memoryBlocks[idx]={type:'free',start:memoryBlocks[idx].start,size:memoryBlocks[idx].size};mergeFree();mlog(id+' released its memory. Adjacent free blocks were merged.');renderMemory();$("memPid").value='P'+nextMemoryPID;showToast(id+' released')}
 function renderMemory(){
  const total=memoryBlocks.reduce((s,b)=>s+b.size,0);const allocated=memoryBlocks.filter(b=>b.type==='process').reduce((s,b)=>s+b.size,0);const free=total-allocated;$("allocatedKB").textContent=allocated+' KB';$("freeKB").textContent=free+' KB';$("memoryProcessCount").textContent=String(memoryBlocks.filter(b=>b.type==='process').length);$("freeBlocks").textContent=String(memoryBlocks.filter(b=>b.type==='free').length);$("memoryStatus").textContent=free+' KB free';$("memoryEndLabel").textContent=memorySize+' KB';
  $("memoryBar").innerHTML=memoryBlocks.map(b=>'<div class="mem-block '+(b.type==='free'?'free':'allocated')+'" style="width:'+(b.size/memorySize*100)+'%" title="'+(b.type==='free'?'Free':'Allocated to '+b.id)+' — '+b.size+' KB"><div><span>'+(b.type==='free'?'FREE':escapeHTML(b.id))+'</span><small>'+b.size+' KB</small></div></div>').join('');
