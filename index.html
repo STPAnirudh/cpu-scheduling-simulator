@@ -2,243 +2,189 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CPU Scheduling Simulator</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>OS Lab — CPU & Memory Visualizer</title>
 <style>
-:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#667085;--line:#d9dee8;--accent:#2563eb;--accent2:#1d4ed8;--good:#15803d;--danger:#dc2626;--shadow:0 8px 24px rgba(15,23,42,.07)}
-*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-header{background:#102a43;color:#fff;padding:24px 28px} header h1{margin:0 0 5px;font-size:26px} header p{margin:0;color:#cbd5e1}
-main{max-width:1250px;margin:22px auto;padding:0 18px;display:grid;gap:18px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:18px}
-h2{font-size:18px;margin:0 0 14px}.sub{color:var(--muted);font-size:13px}
-.controls{display:grid;grid-template-columns:1.1fr .8fr .8fr auto auto;gap:10px;align-items:end}
-label{display:block;font-weight:650;margin-bottom:5px} input,select,button{font:inherit}
-input,select{width:100%;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff}
-button{border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer;background:var(--accent);color:white}
-button:hover{background:var(--accent2)} button.secondary{background:#e8edf5;color:#26364a} button.danger{background:#fee2e2;color:#991b1b}
-.actions{display:flex;gap:8px;flex-wrap:wrap}
-table{width:100%;border-collapse:collapse} th,td{padding:9px 8px;border-bottom:1px solid #e8ecf2;text-align:center} th{background:#f7f9fc;font-size:13px} td:first-child,th:first-child{text-align:left}
-.empty{text-align:center;color:var(--muted);padding:25px}
-.gantt-wrap{overflow-x:auto;padding-bottom:5px}.gantt{display:flex;min-width:max-content;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.block{height:64px;min-width:60px;padding:8px 10px;display:flex;flex-direction:column;justify-content:center;align-items:center;border-right:1px solid rgba(255,255,255,.75);font-weight:750}
-.block span{font-size:11px;font-weight:500;margin-top:2px}.idle{background:#e5e7eb;color:#374151}
-.scale{display:flex;min-width:max-content}.tick{width:60px;font-size:11px;color:var(--muted);padding-top:4px;text-align:left}
-.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{background:#f7f9fc;border:1px solid var(--line);border-radius:10px;padding:13px}.metric b{display:block;font-size:21px}.metric span{color:var(--muted);font-size:12px}
-.grid2{display:grid;grid-template-columns:1.35fr .65fr;gap:18px}
-.log{background:#0f172a;color:#dbeafe;border-radius:10px;padding:13px;min-height:180px;max-height:360px;overflow:auto;font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap}
-.info{background:#eff6ff;border-left:4px solid var(--accent);padding:12px;border-radius:7px;color:#1e3a5f}
-.badge{display:inline-block;padding:3px 7px;border-radius:99px;background:#dbeafe;color:#1d4ed8;font-size:11px;font-weight:700}
-@media(max-width:850px){.controls{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}}
+:root{--bg:#f4f7fb;--surface:#fff;--surface2:#f8fafc;--text:#172033;--muted:#64748b;--line:#dbe3ee;--primary:#3157d5;--primary-dark:#2443ad;--primary-soft:#eaf0ff;--green:#14804a;--green-soft:#e9f8f0;--orange:#c66a11;--orange-soft:#fff3e6;--red:#c63b3b;--red-soft:#ffeded;--nav:#101827;--shadow:0 12px 32px rgba(15,23,42,.07);--radius:16px}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input,select{font:inherit}button{cursor:pointer}.app-shell{min-height:100vh}.topbar{background:var(--nav);color:#fff}.topbar-inner{max-width:1280px;margin:auto;padding:20px 24px 18px}.brand{display:flex;align-items:center;gap:13px}.brand-mark{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#5276ef,#243d9d);display:grid;place-items:center;box-shadow:0 8px 18px rgba(49,87,213,.3)}.brand-mark svg{width:23px;height:23px}.brand h1{font-size:20px;line-height:1.1;margin:0}.brand p{margin:4px 0 0;color:#aebbd0;font-size:12px}.nav{max-width:1280px;margin:auto;padding:0 24px;display:flex;gap:6px}.nav button{border:0;background:transparent;color:#aebbd0;padding:13px 16px;border-bottom:2px solid transparent;font-weight:700}.nav button.active{color:#fff;border-bottom-color:#6f8cff}.page{max-width:1280px;margin:0 auto;padding:28px 24px 44px}.hero{display:flex;justify-content:space-between;gap:20px;align-items:flex-end;margin-bottom:22px}.eyebrow{color:var(--primary);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:11px}.hero h2{margin:4px 0 6px;font-size:30px;letter-spacing:-.03em}.hero p{margin:0;color:var(--muted);max-width:730px}.status{display:flex;gap:8px;flex-wrap:wrap}.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);padding:7px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#475569}.dot{width:7px;height:7px;border-radius:50%;background:var(--green)}.module{display:none}.module.active{display:block}.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:18px}.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:16px}.card-head h3{margin:0;font-size:17px}.card-head p{margin:4px 0 0;color:var(--muted);font-size:12px}.step{display:inline-grid;place-items:center;width:29px;height:29px;border-radius:9px;background:var(--primary-soft);color:var(--primary);font-weight:900;margin-right:8px}.form-grid{display:grid;grid-template-columns:1fr .8fr .8fr auto auto;gap:10px;align-items:end}.field label{display:block;font-size:12px;font-weight:800;margin-bottom:6px;color:#475569}.field input,.field select{width:100%;min-height:42px;padding:9px 11px;border:1px solid #cfd8e5;border-radius:10px;background:#fff;color:var(--text);outline:none}.field input:focus,.field select:focus{border-color:#6c87e8;box-shadow:0 0 0 3px var(--primary-soft)}.btn{min-height:42px;padding:9px 14px;border-radius:10px;border:1px solid transparent;font-weight:800}.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}.btn-soft{background:var(--primary-soft);color:var(--primary)}.btn-neutral{background:#eef2f7;color:#334155}.btn-danger{background:var(--red-soft);color:#a72c2c}.btn:disabled{opacity:.5;cursor:not-allowed}.actions{display:flex;gap:8px;flex-wrap:wrap}.table-wrap{overflow-x:auto;margin-top:16px;border:1px solid var(--line);border-radius:12px}.table{width:100%;border-collapse:collapse;min-width:560px}.table th,.table td{padding:11px 12px;border-bottom:1px solid #e9edf3;text-align:center}.table th{background:var(--surface2);font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#64748b}.table th:first-child,.table td:first-child{text-align:left;font-weight:800}.table tr:last-child td{border-bottom:0}.mono{font-variant-numeric:tabular-nums}.empty{padding:28px;text-align:center;color:var(--muted)}.two-col{display:grid;grid-template-columns:1.45fr .8fr;gap:18px}.gantt-scroll{overflow-x:auto;padding-bottom:6px}.gantt{display:flex;min-width:max-content;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#f8fafc}.gblock{height:72px;min-width:66px;padding:8px 9px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:1px solid rgba(255,255,255,.9);font-weight:900}.gblock small{font-size:10px;font-weight:600;opacity:.85;margin-top:3px}.gblock.idle{background:#e7ebf1;color:#536170}.gantt-legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;color:var(--muted);font-size:11px}.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{border:1px solid var(--line);background:var(--surface2);border-radius:12px;padding:14px}.metric .label{font-size:11px;color:var(--muted);font-weight:700}.metric .value{font-size:22px;font-weight:900;margin-top:2px}.info{background:var(--primary-soft);border:1px solid #d7e1ff;border-radius:12px;padding:13px;color:#29427d}.info strong{color:#20366b}.log{background:#0c1422;color:#d8e5ff;border-radius:12px;padding:14px;min-height:200px;max-height:320px;overflow:auto;white-space:pre-wrap;font:12px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace}.algo-note{min-height:70px}.memory-controls{display:grid;grid-template-columns:.8fr 1fr .7fr .7fr auto;gap:10px;align-items:end}.memory-stage{display:grid;grid-template-columns:260px 1fr;gap:20px;align-items:stretch}.memory-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.memory-stat{padding:13px;border:1px solid var(--line);border-radius:12px;background:var(--surface2)}.memory-stat b{font-size:20px;display:block}.memory-stat span{font-size:11px;color:var(--muted)}.memory-visual{min-height:270px;border:1px solid var(--line);border-radius:14px;background:#f8fafc;padding:14px;display:flex;flex-direction:column}.memory-bar{flex:1;display:flex;min-height:210px;border:1px solid #cfd7e3;border-radius:10px;overflow:hidden;background:#eef2f6}.mem-block{position:relative;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;min-width:0;border-right:1px solid #fff;transition:.25s}.mem-block span{font-weight:900;font-size:12px;overflow-wrap:anywhere}.mem-block small{display:block;font-size:10px;margin-top:2px;opacity:.8}.mem-block.free{background:#edf1f5;color:#64748b}.mem-block.allocated{background:#dbe5ff;color:#243b83}.mem-block:hover{filter:brightness(.98)}.memory-scale{display:flex;justify-content:space-between;color:var(--muted);font-size:10px;margin-top:7px}.alloc-table .status-badge{font-size:10px;padding:4px 7px;border-radius:999px;font-weight:800}.ok{background:var(--green-soft);color:var(--green)}.not-ok{background:var(--red-soft);color:var(--red)}.footer{max-width:1280px;margin:auto;padding:0 24px 30px;color:#8190a5;font-size:11px}.hint{margin-top:9px;color:var(--muted);font-size:11px}.hidden{display:none!important}.toast{position:fixed;right:20px;bottom:20px;background:#101827;color:#fff;padding:11px 14px;border-radius:10px;box-shadow:var(--shadow);font-size:12px;opacity:0;transform:translateY(8px);pointer-events:none;transition:.2s}.toast.show{opacity:1;transform:none}@media(max-width:900px){.form-grid,.memory-controls{grid-template-columns:1fr 1fr}.two-col,.memory-stage{grid-template-columns:1fr}.summary-grid{grid-template-columns:1fr 1fr}.hero{align-items:flex-start;flex-direction:column}}@media(max-width:560px){.topbar-inner,.nav,.page,.footer{padding-left:14px;padding-right:14px}.nav{overflow-x:auto}.nav button{white-space:nowrap}.form-grid,.memory-controls,.summary-grid{grid-template-columns:1fr}.hero h2{font-size:25px}.card{padding:15px}.memory-stats{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
-<header><h1>CPU Scheduling Simulator</h1><p>Interactive OPERATING SYSTEMS / CPU SCHEDULING visualizer — pure HTML, CSS and JavaScript.</p></header>
-<main>
-<section class="card">
-<h2>1. Process Input</h2>
-<div class="controls">
-  <div><label for="pid">Process ID</label><input id="pid" value="P1" placeholder="P1"></div>
-  <div><label for="at">AT</label><input id="at" type="number" min="0" value="0"></div>
-  <div><label for="bt">BT</label><input id="bt" type="number" min="1" value="5"></div>
-  <button id="addBtn">Insert Process</button>
-  <button class="secondary" id="sampleBtn">Load Sample</button>
-</div>
-<p class="sub">AT = Arrival Time, BT = Burst Time. Processes are inserted into the table below.</p>
-<div class="actions" style="margin-top:12px">
-  <button class="danger" id="clearBtn">Clear All</button>
-</div>
-<div id="processTable" style="margin-top:14px"></div>
-</section>
-
-<section class="card">
-<h2>2. Scheduling Algorithm</h2>
-<div class="controls" style="grid-template-columns:1fr 1fr auto auto">
-  <div><label for="algo">Algorithm</label>
-    <select id="algo">
-      <option value="FCFS">FCFS — First Come First Serve</option>
-      <option value="SJF">SJF — Shortest Job First (Non-preemptive)</option>
-      <option value="RR">Round Robin</option>
-      <option value="MLFQ">Multi-Level Feedback Queue</option>
-    </select>
+<div class="app-shell">
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4v16M17 4v16M4 7h16M4 17h16"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg></div>
+      <div><h1>OS Lab Visualizer</h1><p>Interactive Operating Systems simulations</p></div>
+    </div>
   </div>
-  <div><label for="quantum">Time Quantum</label><input id="quantum" type="number" min="1" value="2"></div>
-  <button id="runBtn">Run Simulation</button>
-  <button class="secondary" id="explainBtn">Explain Algorithm</button>
-  <button class="danger" id="exitBtn">Exit</button>
-</div>
-<div id="explanation" class="info" style="margin-top:12px"></div>
+  <nav class="nav" aria-label="Simulation modules">
+    <button type="button" class="active" data-module="cpu">CPU Scheduling</button>
+    <button type="button" data-module="memory">Memory Allocation</button>
+  </nav>
+</header>
+
+<main class="page">
+<section class="hero">
+  <div><div class="eyebrow">Operating Systems • Interactive Lab</div><h2 id="heroTitle">CPU Scheduling Simulator</h2><p id="heroDesc">Compare scheduling algorithms, watch the CPU timeline, and calculate CT, TAT and WT for every process.</p></div>
+  <div class="status"><span class="pill"><span class="dot"></span> Runs offline</span><span class="pill">Pure HTML • CSS • JavaScript</span></div>
 </section>
 
-<section class="card">
-<h2>3. Gantt Chart <span id="algoBadge" class="badge">Not run</span></h2>
-<div id="ganttArea" class="gantt-wrap"><div class="empty">Run an algorithm to display the execution timeline.</div></div>
+<section id="cpu" class="module active">
+  <section class="card">
+    <div class="card-head"><div><h3><span class="step">01</span>Process Input</h3><p>Enter the process details used by the selected scheduling algorithm.</p></div><span class="pill">AT • BT</span></div>
+    <div class="form-grid">
+      <div class="field"><label for="pid">Process ID</label><input id="pid" value="P1" placeholder="P1"></div>
+      <div class="field"><label for="at">AT — Arrival Time</label><input id="at" type="number" min="0" value="0"></div>
+      <div class="field"><label for="bt">BT — Burst Time</label><input id="bt" type="number" min="1" value="5"></div>
+      <button type="button" class="btn btn-primary" id="addBtn">+ Insert Process</button>
+      <button type="button" class="btn btn-neutral" id="sampleBtn">Load Sample</button>
+    </div>
+    <div class="actions" style="margin-top:10px"><button type="button" class="btn btn-danger" id="clearBtn">Clear Processes</button></div>
+    <div id="processTable" class="table-wrap"></div>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><div><h3><span class="step">02</span>Scheduling Algorithm</h3><p>Select an algorithm and run the simulation.</p></div></div>
+    <div class="form-grid" style="grid-template-columns:1.2fr .7fr auto auto auto">
+      <div class="field"><label for="algo">Algorithm</label><select id="algo"><option value="FCFS">FCFS — First Come First Serve</option><option value="SJF">SJF — Shortest Job First (Non-preemptive)</option><option value="RR">Round Robin</option><option value="MLFQ">MLFQ — Multi-Level Feedback Queue</option></select></div>
+      <div class="field"><label for="quantum">Time Quantum (RR)</label><input id="quantum" type="number" min="1" value="2"></div>
+      <button type="button" class="btn btn-primary" id="runBtn">Run Simulation</button>
+      <button type="button" class="btn btn-soft" id="explainBtn">Explain</button>
+      <button type="button" class="btn btn-neutral" id="exitBtn">Reset Output</button>
+    </div>
+    <div id="explanation" class="info algo-note" style="margin-top:13px"></div>
+  </section>
+
+  <section class="two-col">
+    <section class="card"><div class="card-head"><div><h3><span class="step">03</span>Gantt Chart</h3><p>CPU execution timeline for the selected algorithm.</p></div><span id="algoBadge" class="pill">Not run</span></div><div id="ganttArea" class="gantt-scroll"><div class="empty">Run a simulation to display the CPU timeline.</div></div></section>
+    <section class="card"><div class="card-head"><div><h3>Simulation Summary</h3><p>Overall performance metrics.</p></div></div><div class="summary-grid"><div class="metric"><div class="label">Average WT</div><div class="value" id="avgWT">—</div></div><div class="metric"><div class="label">Average TAT</div><div class="value" id="avgTAT">—</div></div><div class="metric"><div class="label">Throughput</div><div class="value" id="throughput">—</div></div><div class="metric"><div class="label">CPU Timeline</div><div class="value" id="makespan">—</div></div></div></section>
+  </section>
+
+  <section class="card"><div class="card-head"><div><h3><span class="step">04</span>Process Results</h3><p>CT, TAT and WT calculated from the completed schedule.</p></div></div><div id="resultTable" class="table-wrap"><div class="empty">No simulation results yet.</div></div></section>
+
+  <section class="two-col"><section class="card"><div class="card-head"><div><h3>Operation Log</h3><p>Plain-English trace of scheduling decisions.</p></div></div><div id="log" class="log">Ready. Add processes and run an algorithm.</div></section><section class="card"><div class="card-head"><div><h3>Key Formulas</h3><p>The metrics used by the simulator.</p></div></div><div class="info"><strong>Turnaround Time (TAT)</strong><br>CT − AT<br><br><strong>Waiting Time (WT)</strong><br>TAT − BT<br><br><span class="hint">CPU idle intervals are shown when no process has arrived yet.</span></div></section></section>
 </section>
 
-<section class="card">
-<h2>4. Process Results</h2>
-<div id="resultTable"><div class="empty">No simulation results yet.</div></div>
-</section>
+<section id="memory" class="module">
+  <section class="card">
+    <div class="card-head"><div><h3><span class="step">01</span>Memory Setup</h3><p>Choose a memory size, an allocation strategy, and the process size to place into memory.</p></div><span class="pill">Dynamic Partitioning</span></div>
+    <div class="memory-controls">
+      <div class="field"><label for="memorySize">Total Memory</label><input id="memorySize" type="number" min="32" max="100000" value="1024"></div>
+      <div class="field"><label for="memAlgo">Allocation Algorithm</label><select id="memAlgo"><option value="first">First Fit</option><option value="best">Best Fit</option><option value="worst">Worst Fit</option><option value="next">Next Fit</option></select></div>
+      <div class="field"><label for="memPid">Process ID</label><input id="memPid" value="P1" placeholder="P1"></div>
+      <div class="field"><label for="memSizeInput">Process Size (KB)</label><input id="memSizeInput" type="number" min="1" max="100000" value="120" placeholder="120"></div>
+      <button type="button" class="btn btn-primary" id="allocateBtn">Allocate</button>
+    </div>
+    <div class="actions" style="margin-top:10px"><button type="button" class="btn btn-neutral" id="memorySampleBtn">Load Memory Sample</button><button type="button" class="btn btn-danger" id="memoryResetBtn">Reset Memory</button></div>
+    <p class="hint">Enter a process ID and its size. After a successful allocation, the next process ID automatically becomes <b>P2</b>, then <b>P3</b>, and so on.</p>
+  </section>
 
-<section class="card">
-<h2>5. Summary</h2>
-<div class="metrics">
- <div class="metric"><b id="avgWT">—</b><span>Average WT</span></div>
- <div class="metric"><b id="avgTAT">—</b><span>Average TAT</span></div>
- <div class="metric"><b id="throughput">—</b><span>Throughput (processes / time)</span></div>
- <div class="metric"><b id="makespan">—</b><span>Total CPU Timeline</span></div>
-</div>
-</section>
+  <section class="card">
+    <div class="card-head"><div><h3><span class="step">02</span>Memory Map</h3><p>Visual representation of allocated partitions and remaining free space.</p></div><span id="memoryStatus" class="pill">1024 KB available</span></div>
+    <div class="memory-stage">
+      <div class="memory-stats"><div class="memory-stat"><span>Allocated</span><b id="allocatedKB">0 KB</b></div><div class="memory-stat"><span>Free</span><b id="freeKB">1024 KB</b></div><div class="memory-stat"><span>Processes</span><b id="memoryProcessCount">0</b></div><div class="memory-stat"><span>Free Blocks</span><b id="freeBlocks">1</b></div></div>
+      <div class="memory-visual"><div id="memoryBar" class="memory-bar"></div><div class="memory-scale"><span>0 KB</span><span id="memoryEndLabel">1024 KB</span></div></div>
+    </div>
+  </section>
 
-<section class="grid2">
-<section class="card"><h2>Operation Log</h2><div id="log" class="log">Ready. Insert processes and run a scheduling algorithm.</div></section>
-<section class="card"><h2>How it works</h2><div id="details" class="info">
-<b>Key formulas</b><br>
-TAT = CT − AT<br>
-WT = TAT − BT<br><br>
-The simulator also records CPU idle periods when no process has arrived.
-</div></section>
+  <section class="card">
+    <div class="card-head"><div><h3><span class="step">03</span>Allocation Results</h3><p>See where every process was placed and how much free memory remains.</p></div></div>
+    <div id="allocationTable" class="table-wrap"></div>
+  </section>
+
+  <section class="two-col"><section class="card"><div class="card-head"><div><h3>Memory Operation Log</h3><p>Step-by-step allocation decisions.</p></div></div><div id="memoryLog" class="log">Memory initialized with 1024 KB free space.</div></section><section class="card"><div class="card-head"><div><h3>How Allocation Works</h3><p>Quick comparison of the four strategies.</p></div></div><div class="info"><strong>First Fit</strong> — first free block large enough.<br><br><strong>Best Fit</strong> — smallest free block that can hold the process.<br><br><strong>Worst Fit</strong> — largest free block available.<br><br><strong>Next Fit</strong> — continues searching from the last successful position.</div></section></section>
 </section>
 </main>
+<footer class="footer">OS Lab Visualizer • Educational simulation • No external libraries or network requests</footer>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+</div>
 
 <script>
 "use strict";
-let processes = [];
-let lastResult = null;
+const $=id=>document.getElementById(id);
+let processes=[];
+let memorySize=1024;
+let memoryBlocks=[];
+let nextFitAddress=0;
 
-const $ = id => document.getElementById(id);
-const algoText = {
- FCFS:"FCFS executes ready processes in order of arrival. It is non-preemptive, so once a process starts it runs until completion.",
- SJF:"SJF selects the shortest burst among processes that have already arrived. It is non-preemptive.",
- RR:"Round Robin gives each ready process a fixed time quantum. When a time slice ends, newly arrived processes are added to the ready queue first; the unfinished current process is then placed at the back of the queue.",
- MLFQ:"This implementation uses three feedback queues: Q0 (quantum 2), Q1 (quantum 4), and Q2 (FCFS). New processes enter Q0; unfinished processes are demoted after using their quantum. The highest non-empty queue is selected first. This assignment does not specify one exact MLFQ policy, so these rules are explicitly used by this simulator."
+const cpuDescriptions={
+ FCFS:"<strong>FCFS</strong> runs processes in arrival order. It is non-preemptive: once a process starts, it runs until completion.",
+ SJF:"<strong>SJF</strong> selects the shortest burst time among processes that have already arrived. This simulator uses non-preemptive SJF.",
+ RR:"<strong>Round Robin</strong> gives each ready process a fixed time quantum. At a quantum boundary, newly arrived processes join the queue before the unfinished current process is re-queued.",
+ MLFQ:"<strong>MLFQ</strong> uses Q0 (quantum 2), Q1 (quantum 4), and Q2 (FCFS). New processes enter Q0; unfinished processes are demoted to a lower-priority queue."
 };
-$("explanation").innerHTML = algoText.FCFS;
 
-$("algo").addEventListener("change", () => $("explanation").textContent = algoText[$("algo").value]);
-$("explainBtn").addEventListener("click", () => {
-  const a = $("algo").value;
-  $("explanation").innerHTML = "<b>"+a+"</b><br>"+algoText[a]+
-    (a==="RR" ? "<br><br>Current quantum: <b>"+$("quantum").value+"</b> time units." : "");
-});
-
-function log(msg){ $("log").textContent += "\\n" + msg; $("log").scrollTop = $("log").scrollHeight; }
-
+function showToast(text){const t=$("toast");t.textContent=text;t.classList.add("show");clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>t.classList.remove("show"),1800)}
+function log(msg){const el=$("log");el.textContent+=(el.textContent?"\n":"")+msg;el.scrollTop=el.scrollHeight}
+function mlog(msg){const el=$("memoryLog");el.textContent+=(el.textContent?"\n":"")+msg;el.scrollTop=el.scrollHeight}
 function renderProcesses(){
- if(!processes.length){$("processTable").innerHTML='<div class="empty">No processes inserted.</div>';return;}
- $("processTable").innerHTML = `<table><thead><tr><th>PID</th><th>AT</th><th>BT</th><th>Action</th></tr></thead><tbody>`+
- processes.map((p,i)=>`<tr><td>${p.id}</td><td>${p.at}</td><td>${p.bt}</td><td><button class="danger" onclick="removeProcess(${i})">Delete</button></td></tr>`).join("")+
- `</tbody></table>`;
+ const el=$("processTable");
+ if(!processes.length){el.innerHTML='<div class="empty">No processes inserted. Add a process or load the sample.</div>';return}
+ el.innerHTML='<table class="table"><thead><tr><th>PID</th><th>AT</th><th>BT</th><th>Action</th></tr></thead><tbody>'+processes.map((p,i)=>'<tr><td>'+escapeHTML(p.id)+'</td><td>'+p.at+'</td><td>'+p.bt+'</td><td><button type="button" class="btn btn-danger" data-delete="'+i+'">Delete</button></td></tr>').join('')+'</tbody></table>';
+ el.querySelectorAll('[data-delete]').forEach(btn=>btn.addEventListener('click',()=>{const i=Number(btn.dataset.delete);log('Deleted '+processes[i].id+'.');processes.splice(i,1);renderProcesses();clearCPUOutput();showToast('Process deleted');}));
 }
-window.removeProcess = function(i){log("Deleted "+processes[i].id+".");processes.splice(i,1);renderProcesses();};
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function cloneProcesses(){return processes.map(p=>({...p,remaining:p.bt,ct:null,tat:null,wt:null}))}
+function addSeg(g,pid,start,end){if(end<=start)return;if(g.length&&g[g.length-1].pid===pid&&g[g.length-1].end===start)g[g.length-1].end=end;else g.push({pid,start,end})}
+function sortedByArrival(ps){return ps.slice().sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id))}
 
-$("addBtn").addEventListener("click",()=>{
- const id=$("pid").value.trim() || "P"+(processes.length+1);
- const at=Number($("at").value), bt=Number($("bt").value);
- if(!Number.isInteger(at)||at<0||!Number.isInteger(bt)||bt<=0){alert("Arrival time must be >= 0 and burst time must be > 0.");return;}
- if(processes.some(p=>p.id===id)){alert("Process ID must be unique.");return;}
- processes.push({id,at,bt});
- log(`Inserted ${id}: AT=${at}, BT=${bt}`);
- $("pid").value="P"+(processes.length+1); $("at").value=Math.max(0,at); $("bt").value=5;
- renderProcesses();
-});
-$("clearBtn").addEventListener("click",()=>{processes=[];lastResult=null;renderProcesses();clearOutput();$("log").textContent="All processes cleared.";});
-$("sampleBtn").addEventListener("click",()=>{
- processes=[{id:"P1",at:0,bt:5},{id:"P2",at:1,bt:3},{id:"P3",at:2,bt:8},{id:"P4",at:4,bt:2}];
- $("pid").value="P5"; $("at").value=5; $("bt").value=4; renderProcesses(); log("Loaded sample: P1(0,5), P2(1,3), P3(2,8), P4(4,2).");
-});
-
-function clone(){return processes.map(p=>({...p,remaining:p.bt,ct:null,wt:null,tat:null}));}
-function addSeg(g,pid,start,end){if(end<=start)return;if(g.length&&g[g.length-1].pid===pid&&g[g.length-1].end===start)g[g.length-1].end=end;else g.push({pid,start,end});}
-
-function fcfs(){
- let ps=clone().sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)),t=0,g=[];
- for(const p of ps){if(t<p.at){addSeg(g,"IDLE",t,p.at);t=p.at;}let s=t;t+=p.bt;p.ct=t;addSeg(g,p.id,s,t);log(`FCFS: ${p.id} runs from ${s} to ${t}.`);}
- return {ps,g};
-}
-function sjf(){
- let ps=clone(),done=0,t=0,g=[];
- while(done<ps.length){
-   const ready=ps.filter(p=>p.ct===null&&p.at<=t).sort((a,b)=>a.bt-b.bt||a.at-b.at||a.id.localeCompare(b.id));
-   if(!ready.length){const n=Math.min(...ps.filter(p=>p.ct===null).map(p=>p.at));addSeg(g,"IDLE",t,n);t=n;continue;}
-   const p=ready[0],s=t;t+=p.bt;p.ct=t;done++;addSeg(g,p.id,s,t);log(`SJF: selected shortest ready job ${p.id} (${p.bt} units), ${s}→${t}.`);
- }
- return {ps,g};
-}
+function fcfs(){let ps=sortedByArrival(cloneProcesses()),t=0,g=[];for(const p of ps){if(t<p.at){addSeg(g,'IDLE',t,p.at);log('FCFS: CPU idle from '+t+' to '+p.at+'.');t=p.at}const s=t;t+=p.bt;p.ct=t;addSeg(g,p.id,s,t);log('FCFS: '+p.id+' runs '+s+' → '+t+'.')}return{ps,g}}
+function sjf(){let ps=cloneProcesses(),done=0,t=0,g=[];while(done<ps.length){const ready=ps.filter(p=>p.ct===null&&p.at<=t).sort((a,b)=>a.bt-b.bt||a.at-b.at||a.id.localeCompare(b.id));if(!ready.length){const future=ps.filter(p=>p.ct===null);const n=Math.min(...future.map(p=>p.at));addSeg(g,'IDLE',t,n);log('SJF: CPU idle from '+t+' to '+n+'.');t=n;continue}const p=ready[0],s=t;t+=p.bt;p.ct=t;done++;addSeg(g,p.id,s,t);log('SJF: selected '+p.id+' (BT '+p.bt+'), '+s+' → '+t+'.')}return{ps,g}}
 function rr(){
- const ps=clone(),q=Number($("quantum").value); if(!Number.isInteger(q)||q<1) throw Error("Time quantum must be a positive integer.");
+ const ps=cloneProcesses(),q=Number($("quantum").value);if(!Number.isInteger(q)||q<1||q>100000)throw Error('Time quantum must be a positive integer.');
  let t=0,g=[],queue=[],added=new Set(),finished=0;
- const enqueue=()=>ps.filter(p=>p.at<=t&&!added.has(p.id)).sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).forEach(p=>{queue.push(p);added.add(p.id);});
- while(finished<ps.length){
-   enqueue();
-   if(!queue.length){const n=Math.min(...ps.filter(p=>p.remaining>0&&!added.has(p.id)).map(p=>p.at));addSeg(g,"IDLE",t,n);t=n;enqueue();}
-   const p=queue.shift(),s=t,run=Math.min(q,p.remaining);t+=run;p.remaining-=run;addSeg(g,p.id,s,t);
-   log(`RR: ${p.id} gets CPU for ${run} unit(s), ${s}→${t}.`);
-   enqueue();
-   if(p.remaining>0)queue.push(p);else{p.ct=t;finished++;log(`RR: ${p.id} completed at ${t}.`);}
- }
- return {ps,g};
-}
+ function enqueue(){ps.filter(p=>p.at<=t&&!added.has(p.id)).sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).forEach(p=>{queue.push(p);added.add(p.id)})}
+ while(finished<ps.length){enqueue();if(!queue.length){const n=Math.min(...ps.filter(p=>p.remaining>0&&!added.has(p.id)).map(p=>p.at));addSeg(g,'IDLE',t,n);log('RR: CPU idle from '+t+' to '+n+'.');t=n;enqueue()}const p=queue.shift(),s=t,run=Math.min(q,p.remaining);t+=run;p.remaining-=run;addSeg(g,p.id,s,t);log('RR: '+p.id+' executes '+s+' → '+t+' ('+run+' units).');enqueue();if(p.remaining>0)queue.push(p);else{p.ct=t;finished++;log('RR: '+p.id+' completed at '+t+'.')}}return{ps,g}}
 function mlfq(){
- const ps=clone(), qs=[[],[],[]],added=new Set(),qv=[2,4,Infinity];let t=0,finished=0,g=[];
- const enqueue=()=>ps.filter(p=>p.at<=t&&!added.has(p.id)).sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).forEach(p=>{p.level=0;qs[0].push(p);added.add(p.id);});
- while(finished<ps.length){
-   enqueue();
-   let level=qs.findIndex(q=>q.length);
-   if(level<0){const n=Math.min(...ps.filter(p=>p.remaining>0&&!added.has(p.id)).map(p=>p.at));addSeg(g,"IDLE",t,n);t=n;enqueue();level=qs.findIndex(q=>q.length);}
-   const p=qs[level].shift(),run=Math.min(qv[level],p.remaining),s=t;t+=run;p.remaining-=run;addSeg(g,p.id,s,t);
-   log(`MLFQ: ${p.id} executes in Q${level} for ${run} unit(s), ${s}→${t}.`);
-   enqueue();
-   if(p.remaining>0){p.level=Math.min(2,level+1);qs[p.level].push(p);log(`MLFQ: ${p.id} demoted to Q${p.level}.`);}
-   else{p.ct=t;finished++;log(`MLFQ: ${p.id} completed at ${t}.`);}
- }
- return {ps,g};
+ const ps=cloneProcesses(),qs=[[],[],[]],added=new Set(),qv=[2,4,Infinity];let t=0,finished=0,g=[];
+ function enqueue(){ps.filter(p=>p.at<=t&&!added.has(p.id)).sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).forEach(p=>{p.level=0;qs[0].push(p);added.add(p.id)})}
+ while(finished<ps.length){enqueue();let level=qs.findIndex(q=>q.length);if(level<0){const n=Math.min(...ps.filter(p=>p.remaining>0&&!added.has(p.id)).map(p=>p.at));addSeg(g,'IDLE',t,n);log('MLFQ: CPU idle from '+t+' to '+n+'.');t=n;enqueue();level=qs.findIndex(q=>q.length)}const p=qs[level].shift(),run=Math.min(qv[level],p.remaining),s=t;t+=run;p.remaining-=run;addSeg(g,p.id,s,t);log('MLFQ: '+p.id+' runs in Q'+level+', '+s+' → '+t+'.');enqueue();if(p.remaining>0){p.level=Math.min(2,level+1);qs[p.level].push(p);log('MLFQ: '+p.id+' demoted to Q'+p.level+'.')}else{p.ct=t;finished++;log('MLFQ: '+p.id+' completed at '+t+'.')}}return{ps,g}}
+function calculate(res){res.ps.forEach(p=>{p.tat=p.ct-p.at;p.wt=p.tat-p.bt});const avgWT=res.ps.reduce((s,p)=>s+p.wt,0)/res.ps.length,avgTAT=res.ps.reduce((s,p)=>s+p.tat,0)/res.ps.length;return{...res,avgWT,avgTAT,makespan:res.g.length?res.g[res.g.length-1].end:0}}
+function runCPU(){
+ if(!processes.length){showToast('Add at least one process');return}
+ $("log").textContent='Starting '+$("algo").value+' simulation...';let r;try{r=$("algo").value==='FCFS'?fcfs():$("algo").value==='SJF'?sjf():$("algo").value==='RR'?rr():mlfq()}catch(e){showToast(e.message);return}
+ const res=calculate(r);renderGantt(res.g);renderResults(res.ps);$("avgWT").textContent=res.avgWT.toFixed(2);$("avgTAT").textContent=res.avgTAT.toFixed(2);$("makespan").textContent=String(res.makespan);$("throughput").textContent=(res.ps.length/res.makespan).toFixed(3);$("algoBadge").textContent=$("algo").value;showToast('Simulation complete')
 }
-function calculate(res){
- res.ps.forEach(p=>{p.tat=p.ct-p.at;p.wt=p.tat-p.bt;});
- const avgWT=res.ps.reduce((s,p)=>s+p.wt,0)/res.ps.length, avgTAT=res.ps.reduce((s,p)=>s+p.tat,0)/res.ps.length;
- return {...res,avgWT,avgTAT,makespan:res.g.length?res.g[res.g.length-1].end:0};
-}
-function run(){
- if(!processes.length){alert("Insert at least one process.");return;}
- $("log").textContent=`Starting ${$("algo").value} simulation...`;
- let r;
- try{r=$("algo").value==="FCFS"?fcfs():$("algo").value==="SJF"?sjf():$("algo").value==="RR"?rr():mlfq();}
- catch(e){alert(e.message);return;}
- lastResult=calculate(r);renderGantt(lastResult.g);renderResults(lastResult.ps);
- $("avgWT").textContent=lastResult.avgWT.toFixed(2);
- $("avgTAT").textContent=lastResult.avgTAT.toFixed(2);
- $("makespan").textContent=lastResult.makespan.toFixed(2);
- $("throughput").textContent=(lastResult.ps.length/lastResult.makespan).toFixed(3);
- $("algoBadge").textContent=$("algo").value;
- $("details").innerHTML=`<b>Simulation complete.</b><br>Processes: ${lastResult.ps.length}<br>CPU timeline: 0 → ${lastResult.makespan}<br><br><b>Formulas</b><br>TAT = CT − AT<br>WT = TAT − BT`;
-}
-$("runBtn").addEventListener("click",run);
+function renderResults(ps){ps=ps.slice().sort((a,b)=>a.id.localeCompare(b.id));$("resultTable").innerHTML='<table class="table"><thead><tr><th>PID</th><th>AT</th><th>BT</th><th>CT</th><th>TAT</th><th>WT</th></tr></thead><tbody>'+ps.map(p=>'<tr><td>'+escapeHTML(p.id)+'</td><td>'+p.at+'</td><td>'+p.bt+'</td><td>'+p.ct+'</td><td>'+p.tat+'</td><td>'+p.wt+'</td></tr>').join('')+'</tbody></table>'}
+function renderGantt(g){if(!g.length){$("ganttArea").innerHTML='<div class="empty">No timeline.</div>';return}const max=Math.max(...g.map(x=>x.end-x.start));$("ganttArea").innerHTML='<div class="gantt">'+g.map(x=>{const width=Math.max(74,Math.min(240,(x.end-x.start)/Math.max(1,max)*240));return'<div class="gblock '+(x.pid==='IDLE'?'idle':'')+'" style="width:'+width+'px"><span>'+escapeHTML(x.pid)+'</span><small>'+x.start+' → '+x.end+'</small></div>'}).join('')+'</div>'}
+function clearCPUOutput(){$("ganttArea").innerHTML='<div class="empty">Run a simulation to display the CPU timeline.</div>';$('resultTable').innerHTML='<div class="empty">No simulation results yet.</div>';['avgWT','avgTAT','throughput','makespan'].forEach(id=>$(id).textContent='—');$('algoBadge').textContent='Not run';}
 
-function renderResults(ps){
- ps=ps.slice().sort((a,b)=>a.id.localeCompare(b.id));
- $("resultTable").innerHTML=`<table><thead><tr><th>PID</th><th>AT</th><th>BT</th><th>CT</th><th>TAT</th><th>WT</th></tr></thead><tbody>`+
- ps.map(p=>`<tr><td>${p.id}</td><td>${p.at}</td><td>${p.bt}</td><td>${p.ct}</td><td>${p.tat}</td><td>${p.wt}</td></tr>`).join("")+
- `</tbody></table>`;
+function initMemory(){memorySize=Math.max(32,Math.min(100000,Number($("memorySize").value)||1024));$("memorySize").value=memorySize;memoryBlocks=[{type:'free',start:0,size:memorySize}];nextFitAddress=0;$("memPid").value='P1';$("memSizeInput").value=120;renderMemory();$("memoryLog").textContent='Memory initialized with '+memorySize+' KB free space.';showToast('Memory reset')}
+function chooseBlock(size,algo){const candidates=memoryBlocks.map((b,i)=>({b,i})).filter(x=>x.b.type==='free'&&x.b.size>=size);if(!candidates.length)return-1;if(algo==='first')return candidates[0].i;if(algo==='best')return candidates.reduce((a,x)=>x.b.size<a.b.size?x:a).i;if(algo==='worst')return candidates.reduce((a,x)=>x.b.size>a.b.size?x:a).i;if(algo==='next'){const ordered=candidates.slice().sort((a,b)=>a.b.start-b.b.start);const after=ordered.filter(x=>x.b.start>=nextFitAddress);return (after[0]||ordered[0]).i}return candidates[0].i}
+function mergeFree(){const merged=[];for(const b of memoryBlocks){const last=merged[merged.length-1];if(last&&last.type==='free'&&b.type==='free')last.size+=b.size;else merged.push({...b})}memoryBlocks=merged}
+function allocateMemory(){
+ const id=$("memPid").value.trim();const size=Number($("memSizeInput").value);
+ if(!/^[A-Za-z][A-Za-z0-9_-]*$/.test(id)){showToast('Process ID must start with a letter');return}
+ if(!Number.isInteger(size)||size<=0||size>100000){showToast('Enter a valid process size');return}
+ if(size>memorySize){showToast('Process is larger than total memory');return}
+ if(memoryBlocks.some(b=>b.type==='process'&&b.id===id)){showToast('Process ID already exists');return}
+ const algo=$("memAlgo").value,idx=chooseBlock(size,algo);if(idx<0){mlog(id+' ('+size+' KB): allocation failed — no suitable free block.');showToast('Allocation failed');return}
+ const block=memoryBlocks[idx],start=block.start;const alloc={type:'process',id,size,start};const remain=block.size-size;memoryBlocks.splice(idx,1,alloc,...(remain>0?[{type:'free',start:start+size,size:remain}]:[]));
+ nextFitAddress=(start+size)%memorySize;
+ const names={first:'First Fit',best:'Best Fit',worst:'Worst Fit',next:'Next Fit'};mlog(names[algo]+': '+id+' allocated '+size+' KB at '+start+' KB.');renderMemory();
+ const nextNumber=getNextMemoryPIDNumber();$("memPid").value='P'+nextNumber;showToast(id+' allocated')
 }
-function renderGantt(g){
- if(!g.length){$("ganttArea").innerHTML='<div class="empty">No timeline.</div>';return;}
- const total=g[g.length-1].end;
- $("ganttArea").innerHTML='<div class="gantt">'+g.map(x=>{
-   const w=Math.max(60,(x.end-x.start)*55);
-   return `<div class="block ${x.pid==="IDLE"?"idle":""}" style="width:${w}px"><b>${x.pid}</b><span>${x.start} → ${x.end}</span></div>`;
- }).join("")+'</div><div class="scale">'+g.map(x=>`<div class="tick" style="width:${Math.max(60,(x.end-x.start)*55)}px">${x.start}</div>`).join("")+`<div class="tick">${total}</div></div>`;
+function getNextMemoryPIDNumber(){let n=1;const ids=new Set(memoryBlocks.filter(b=>b.type==='process').map(b=>b.id));while(ids.has('P'+n))n++;return n}
+function freeProcess(id){const idx=memoryBlocks.findIndex(b=>b.type==='process'&&b.id===id);if(idx<0)return;memoryBlocks[idx]={type:'free',start:memoryBlocks[idx].start,size:memoryBlocks[idx].size};mergeFree();mlog(id+' released its memory. Adjacent free blocks were merged.');renderMemory();$("memPid").value=getNextMemoryPIDNumber()===1?'P1':'P'+getNextMemoryPIDNumber();showToast(id+' released')}
+function renderMemory(){
+ const total=memoryBlocks.reduce((s,b)=>s+b.size,0);const allocated=memoryBlocks.filter(b=>b.type==='process').reduce((s,b)=>s+b.size,0);const free=total-allocated;$("allocatedKB").textContent=allocated+' KB';$("freeKB").textContent=free+' KB';$("memoryProcessCount").textContent=String(memoryBlocks.filter(b=>b.type==='process').length);$("freeBlocks").textContent=String(memoryBlocks.filter(b=>b.type==='free').length);$("memoryStatus").textContent=free+' KB free';$("memoryEndLabel").textContent=memorySize+' KB';
+ $("memoryBar").innerHTML=memoryBlocks.map(b=>'<div class="mem-block '+(b.type==='free'?'free':'allocated')+'" style="width:'+(b.size/memorySize*100)+'%" title="'+(b.type==='free'?'Free':'Allocated to '+b.id)+' — '+b.size+' KB"><div><span>'+(b.type==='free'?'FREE':escapeHTML(b.id))+'</span><small>'+b.size+' KB</small></div></div>').join('');
+ const rows=memoryBlocks.filter(b=>b.type==='process');$("allocationTable").innerHTML='<table class="table alloc-table"><thead><tr><th>PID</th><th>Size</th><th>Start</th><th>End</th><th>Status</th><th>Action</th></tr></thead><tbody>'+(rows.length?rows.map(b=>'<tr><td>'+escapeHTML(b.id)+'</td><td>'+b.size+' KB</td><td>'+b.start+' KB</td><td>'+(b.start+b.size)+' KB</td><td><span class="status-badge ok">Allocated</span></td><td><button type="button" class="btn btn-danger" data-free="'+escapeHTML(b.id)+'">Release</button></td></tr>').join(''):'<tr><td colspan="6" class="empty">No processes allocated yet.</td></tr>')+'</tbody></table>';
+ $("allocationTable").querySelectorAll('[data-free]').forEach(btn=>btn.addEventListener('click',()=>freeProcess(btn.dataset.free)))
 }
-function clearOutput(){
- $("ganttArea").innerHTML='<div class="empty">Run an algorithm to display the execution timeline.</div>';
- $("resultTable").innerHTML='<div class="empty">No simulation results yet.</div>';
- ["avgWT","avgTAT","throughput","makespan"].forEach(id=>$(id).textContent="—");
- $("algoBadge").textContent="Not run";
-}
-$("exitBtn").addEventListener("click",()=>{
-  $("log").textContent="Simulation ended. You can still restart it by clicking Run Simulation.";
-  $("algoBadge").textContent="Exited";
-});
-renderProcesses(); $("explanation").textContent=algoText.FCFS;
+
+$("addBtn").addEventListener('click',()=>{const id=$("pid").value.trim()||'P'+(processes.length+1),at=Number($("at").value),bt=Number($("bt").value);if(!/^[A-Za-z][A-Za-z0-9_-]*$/.test(id)){showToast('PID must start with a letter');return}if(!Number.isInteger(at)||at<0||at>100000||!Number.isInteger(bt)||bt<=0||bt>100000){showToast('Enter valid AT and BT');return}if(processes.some(p=>p.id===id)){showToast('Process ID must be unique');return}processes.push({id,at,bt});log('Inserted '+id+': AT='+at+', BT='+bt+'.');$("pid").value='P'+(processes.length+1);$("at").value=at;$("bt").value=5;renderProcesses();clearCPUOutput();showToast(id+' inserted')});
+$("sampleBtn").addEventListener('click',()=>{processes=[{id:'P1',at:0,bt:5},{id:'P2',at:1,bt:3},{id:'P3',at:2,bt:8},{id:'P4',at:4,bt:2}];$("pid").value='P5';$("at").value=5;$("bt").value=4;renderProcesses();clearCPUOutput();log('Loaded sample: P1(0,5), P2(1,3), P3(2,8), P4(4,2).');showToast('CPU sample loaded')});
+$("clearBtn").addEventListener('click',()=>{processes=[];renderProcesses();clearCPUOutput();$("log").textContent='All processes cleared.';showToast('Processes cleared')});
+$("algo").addEventListener('change',()=>$("explanation").innerHTML=cpuDescriptions[$("algo").value]);
+$("explainBtn").addEventListener('click',()=>{const a=$("algo").value;$("explanation").innerHTML=cpuDescriptions[a]+(a==='RR'?'<br><br><strong>Current quantum:</strong> '+$("quantum").value+' time units.':'');});
+$("runBtn").addEventListener('click',runCPU);$("exitBtn").addEventListener('click',()=>{$("log").textContent='Output reset. The input processes are still available.';clearCPUOutput();showToast('Output reset')});
+$("memorySize").addEventListener('change',()=>{const n=Number($("memorySize").value);if(!Number.isInteger(n)||n<32||n>100000){$("memorySize").value=memorySize;showToast('Memory size must be 32–100000 KB');return}if(memoryBlocks.some(b=>b.type==='process')){$("memorySize").value=memorySize;showToast('Reset memory before changing total size');return}memorySize=n;initMemory()});$("allocateBtn").addEventListener('click',allocateMemory);$("memoryResetBtn").addEventListener('click',initMemory);$("memorySampleBtn").addEventListener('click',()=>{initMemory();[120,240,80,180].forEach(size=>{$("memSizeInput").value=size;allocateMemory()});showToast('Memory sample loaded')});
+
+document.querySelectorAll('[data-module]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-module]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.module').forEach(m=>m.classList.toggle('active',m.id===btn.dataset.module));const memory=btn.dataset.module==='memory';$("heroTitle").textContent=memory?'Memory Allocation Visualizer':'CPU Scheduling Simulator';$("heroDesc").textContent=memory?'Experiment with First Fit, Best Fit, Worst Fit and Next Fit using a live memory map.':'Compare scheduling algorithms, watch the CPU timeline, and calculate CT, TAT and WT for every process.'}));
+
+renderProcesses();$("explanation").innerHTML=cpuDescriptions.FCFS;initMemory();
 </script>
 </body>
 </html>
